@@ -17,7 +17,7 @@ CREATE TABLE Producto (
     descripcion VARCHAR(200),
     precio_actual INTEGER CHECK (precio_actual >= 0),
     imagen BYTEA,
-    tipo_producto VARCHAR(10)
+    tipo_producto VARCHAR(10) NOT NULL
 );
 ```
 ##  `Categoria`
@@ -46,7 +46,7 @@ CREATE TABLE Joya (
 	id_producto INTEGER PRIMARY KEY,
 	peso NUMERIC(8,2) CHECK (peso>0),
 	material VARCHAR(90),
-	categoria INTEGER,
+	categoria INTEGER NOT NULL,
 	FOREIGN KEY (categoria) REFERENCES Categoria(id_categoria),
 	FOREIGN KEY (id_producto) REFERENCES Producto(id_producto)
 );
@@ -63,7 +63,7 @@ CREATE TABLE Perfume (
 	id_producto INTEGER PRIMARY KEY,
 	fragancia VARCHAR(60),
 	marca VARCHAR(50),
-	mililitros INTEGER,
+	mililitros INTEGER CHECK (mililitros>0),
 	FOREIGN KEY (id_producto) REFERENCES Producto(id_producto)
 );
 ```
@@ -77,9 +77,9 @@ Representa una **especialización** del **tipo de entidad** `Producto`. Al igual
 ```sql
 CREATE TABLE Joyero (
 	id_producto INTEGER PRIMARY KEY,
-	ancho NUMERIC(4,1),
-	alto NUMERIC(4,1),  
-	largo NUMERIC(4,1),
+	ancho NUMERIC(4,1) CHECK (ancho>0),
+	alto NUMERIC(4,1) CHECK (alto>0),  
+	largo NUMERIC(4,1) CHECK (largo>0),
 	FOREIGN KEY (id_producto) REFERENCES Producto(id_producto)
 );
 ```
@@ -94,8 +94,10 @@ Modela una **interrelación de tipo muchos a muchos (N:M)** entre los tipos de e
 CREATE TABLE JoyeroAlmacenaCategoria (
 	id_categoria INTEGER,
 	id_joyero INTEGER,
-	cantidad INTEGER,
-	PRIMARY KEY (id_categoria,id_joyero)
+	cantidad INTEGER CHECK (cantidad>0),
+	PRIMARY KEY (id_categoria,id_joyero),
+	FOREIGN KEY (id_categoria) REFERENCES Categoria(id_categoria),
+	FOREIGN KEY (id_joyero) REFERENCES Joyero(id_producto)
 );
 ```
 ##  `Proveedor`
@@ -155,9 +157,11 @@ Modela una **interrelación de tipo muchos a muchos (N:M)** entre los tipos de e
 CREATE TABLE ProductoEnCompra (
 	id_compra INTEGER,
 	id_producto INTEGER,
-	cantidad INTEGER,
+	cantidad INTEGER CHECK (cantidad>0),
 	precio_total INTEGER,
-	PRIMARY KEY (id_compra,id_producto)
+	PRIMARY KEY (id_compra,id_producto),
+    FOREIGN KEY (id_compra) REFERENCES Compra(id_compra) ON UPDATE CASCADE,
+    FOREIGN KEY (id_producto) REFERENCES Producto(id_producto) ON UPDATE CASCADE
 );
 ```
 ##  `ProductoEnSucursal`
@@ -171,7 +175,7 @@ Modela una **interrelación de tipo muchos a muchos (N:M)** entre `Producto` y `
 CREATE TABLE ProductoEnSucursal(
 	id_producto INTEGER,
 	id_sucursal INTEGER,
-	stock INTEGER,
+	stock INTEGER CHECK (stock >=0),
 	PRIMARY KEY (id_producto,id_sucursal),
 	FOREIGN KEY (id_producto) REFERENCES Producto(id_producto),
 	FOREIGN KEY (id_sucursal) REFERENCES Sucursal(id_sucursal)
@@ -224,7 +228,7 @@ Representa un **tipo de entidad débil**, ya que su existencia depende de una `V
 CREATE TABLE PagoDeVenta (
 	id_pago SERIAL PRIMARY KEY,
 	id_venta INTEGER,
-	monto INTEGER,
+	monto INTEGER CHECK (monto >0),
 	fecha DATE,
 	FOREIGN KEY (id_venta) REFERENCES Venta(id_venta)
 );
@@ -241,7 +245,7 @@ Modela una **interrelación de tipo muchos a muchos (N:M)** entre `Producto` y `
 CREATE TABLE ProductoEnVenta (
 	id_producto INTEGER,
 	id_venta INTEGER,
-	cantidad INTEGER,
+	cantidad INTEGER CHECK (cantidad>0),
 	precio_en_venta INTEGER,
 	PRIMARY KEY (id_producto,id_venta),
 	FOREIGN KEY (id_producto) REFERENCES Producto(id_producto),
@@ -263,7 +267,7 @@ Se activa antes de registrar un nuevo pago (`PagoDeVenta`). Su función es llama
 CREATE OR REPLACE TRIGGER verificar_y_actualizar_pago
 BEFORE INSERT ON PagoDeVenta
 FOR EACH ROW
-EXECUTE FUNCTION validar_y_actualizar_estado_venta();
+EXECUTE PROCEDURE validar_y_actualizar_estado_venta();
 ```
 
 ##  `agregar_o_actualizar_stock`
@@ -277,7 +281,7 @@ Se dispara después de insertar un registro en `ProductoEnCompra`. Llama a la fu
 CREATE TRIGGER agregar_o_actualizar_stock
 AFTER INSERT ON ProductoEnCompra
 FOR EACH ROW
-EXECUTE FUNCTION actualizar_stock_sucursal_despues_compra();
+EXECUTE PROCEDURE actualizar_stock_sucursal_despues_compra();
 
 ```
 
@@ -292,7 +296,7 @@ Se activa después de que un producto es añadido a una venta (`ProductoEnVenta`
 CREATE TRIGGER ActualizarStockDespuesDeVenta
 AFTER INSERT ON ProductoEnVenta
 FOR EACH ROW
-EXECUTE FUNCTION actualizar_stock();
+EXECUTE PROCEDURE actualizar_stock();
 ```
 
 ##  `VerificarStockEnVenta`
@@ -306,7 +310,7 @@ Se ejecuta antes de insertar un producto en una venta (`ProductoEnVenta`). Llama
 CREATE TRIGGER VerificarStockEnVenta
 BEFORE INSERT ON ProductoEnVenta
 FOR EACH ROW
-EXECUTE FUNCTION verificar_stock_fn();
+EXECUTE PROCEDURE verificar_stock_fn();
 ```
 ---
 
@@ -394,30 +398,30 @@ Función de trigger que actualiza el stock de un producto en una sucursal despu�
 CREATE OR REPLACE FUNCTION actualizar_stock_sucursal_despues_compra()
 RETURNS TRIGGER AS $$
 DECLARE
-    id_sucursal INTEGER;
+    sucursal_id INTEGER;
 BEGIN
     -- Obtener la sucursal asociada a la compra
-    SELECT id_sucursal INTO id_sucursal
+    SELECT Compra.id_sucursal INTO sucursal_id
     FROM Compra
     WHERE id_compra = NEW.id_compra;
 
-    IF id_sucursal IS NULL THEN
+    IF sucursal_id IS NULL THEN
         RAISE EXCEPTION 'No se encontró la sucursal de la compra con ID %', NEW.id_compra;
     END IF;
 
     -- Verificar si el producto ya existe en la sucursal
     IF EXISTS (
-        SELECT 1 FROM ProductoEnSucursal
-        WHERE id_producto = NEW.id_producto AND id_sucursal = id_sucursal
+        SELECT 1 FROM ProductoEnSucursal AS p
+        WHERE p.id_producto = NEW.id_producto AND p.id_sucursal = sucursal_id
     ) THEN
         -- Si existe, actualizar el stock
-        UPDATE ProductoEnSucursal
+        UPDATE ProductoEnSucursal AS p
         SET stock = stock + NEW.cantidad
-        WHERE id_producto = NEW.id_producto AND id_sucursal = id_sucursal;
+        WHERE p.id_producto = NEW.id_producto AND p.id_sucursal = sucursal_id;
     ELSE
         -- Si no existe, insertar nuevo registro
         INSERT INTO ProductoEnSucursal (id_producto, id_sucursal, stock)
-        VALUES (NEW.id_producto, id_sucursal, NEW.cantidad);
+        VALUES (NEW.id_producto, sucursal_id, NEW.cantidad);
     END IF;
 
     RETURN NEW;
@@ -479,22 +483,22 @@ Devuelve el stock de un producto. Si se especifica una sucursal, retorna el stoc
 ### 📄 Definición SQL
 
 ```sql
-CREATE OR REPLACE FUNCTION get_stock (producto_id INTEGER, sucursal_id INTEGER)
+CREATE OR REPLACE FUNCTION get_stock (p_producto_id INTEGER, p_sucursal_id INTEGER)
 RETURNS INTEGER AS $$ 
 DECLARE 
 	v_stock INTEGER;
 BEGIN
-	IF sucursal_id IS NULL THEN 
+	IF p_sucursal_id IS NULL THEN 
 		SELECT COALESCE(SUM(stock),0) INTO v_stock
 		FROM ProductoEnSucursal
-		WHERE producto_id = id_producto;
+		WHERE id_producto = p_producto_id;
 
 		RETURN v_stock;
 	END IF;
 
-	SELECT stock INTO v_stock
+	SELECT COALESCE(SUM(stock),0) INTO v_stock
 	FROM ProductoEnSucursal
-	WHERE producto_id = id_producto AND sucursal_id = id_sucursal;
+	WHERE id_producto = p_producto_id AND id_sucursal = p_sucursal_id;
 
 	RETURN v_stock;
 END;
@@ -509,19 +513,17 @@ Calcula las ganancias de cada sucursal para un mes y año determinados. Devuelve
 
 ```sql
 CREATE OR REPLACE FUNCTION ganancias_por_sucursal(
-    mes_numero TEXT,
+    mes_numero INTEGER,
     p_anio INTEGER
 )
 RETURNS TABLE (
     id_sucursal INTEGER,
-    total_ventas INTEGER,
-    total_compras INTEGER,
-    ingresos INTEGER,
-    gastos INTEGER,
-    ganancia INTEGER
+    total_ventas BIGINT,
+    total_compras BIGINT,
+    ingresos BIGINT,
+    gastos BIGINT,
+    ganancia BIGINT
 ) AS $$
-DECLARE
-    mes_numero INTEGER;
 BEGIN
     RETURN QUERY
     SELECT 
@@ -596,18 +598,16 @@ Calcula las ganancias totales de la empresa para un mes y año específicos. Dev
 ```sql
 CREATE OR REPLACE FUNCTION ganancias_por_mes(mes_numero INTEGER, p_anio INTEGER)
 RETURNS TABLE (
-    mes INTEGER,
-    ingresos INTEGER,
-    gastos INTEGER,
-    ganancia INTEGER
+    mes TEXT,
+    ingresos BIGINT,
+    gastos BIGINT,
+    ganancia BIGINT
 ) AS $$
-DECLARE
-    mes_numero INTEGER;
 BEGIN
    -- Realizar las consultas
     RETURN QUERY
     SELECT 
-        INITCAP(mes_numero) || ' ' || p_anio AS mes,
+        mes_numero || ' / ' || p_anio AS mes,
         
         COALESCE((
             SELECT SUM(monto)
@@ -687,9 +687,9 @@ Proporciona un resumen del estado de todas las ventas de un cliente. Para cada v
 CREATE OR REPLACE FUNCTION estado_de_ventas_por_cliente(p_rut_cliente INTEGER)
 RETURNS TABLE (
     id_venta INTEGER,
-    precio_total INTEGER,
-    total_pagado INTEGER,
-    deuda INTEGER
+    precio_total BIGINT,
+    total_pagado BIGINT,
+    deuda BIGINT
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -741,9 +741,9 @@ Ofrece una vista consolidada de la situación financiera de un cliente, mostrand
 CREATE OR REPLACE FUNCTION estado_general_del_cliente(p_rut_cliente INTEGER)
 RETURNS TABLE (
     rut_cliente INTEGER,
-    total_pagado INTEGER,
-    total_deuda INTEGER,
-    total_ventas INTEGER
+    total_pagado NUMERIC,
+    total_deuda NUMERIC,
+    total_ventas NUMERIC
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -779,7 +779,7 @@ BEGIN
     RETURN QUERY
     SELECT *
     FROM Cliente
-    WHERE nombre ILIKE '%' || p_nombre || '%';
+    WHERE Cliente.nombre ILIKE '%' || p_nombre || '%';
 END;
 $$ LANGUAGE plpgsql;
 ```
