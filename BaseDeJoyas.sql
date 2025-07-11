@@ -1,127 +1,129 @@
 CREATE TABLE Producto (
-	id_producto SERIAL PRIMARY KEY,
-	nombre VARCHAR(100),
-	descripcion VARCHAR(200),
-	precio_actual INTEGER CHECK (precio_actual >= 0),
-	imagen BYTEA,
-	tipo_producto VARCHAR(10)
+    id_producto SERIAL PRIMARY KEY,
+    nombre VARCHAR(100),
+    descripcion VARCHAR(200),
+    precio_actual INTEGER CHECK (precio_actual >= 0),
+    imagen BYTEA,
+    tipo_producto VARCHAR(10) NOT NULL 
 );
 
 CREATE TABLE Categoria (
-	id_categoria SERIAL PRIMARY KEY,
-	nombre VARCHAR(50),
-	descripcion VARCHAR(200)
+    id_categoria SERIAL PRIMARY KEY,
+    nombre VARCHAR(50),
+    descripcion VARCHAR(200)
 );
 
 CREATE TABLE Joya (
-	id_producto INTEGER PRIMARY KEY,
-	peso NUMERIC(8,2) CHECK (peso>0),
-	material VARCHAR(90),
-	categoria INTEGER,
-	FOREIGN KEY (categoria) REFERENCES Categoria(id_categoria),
-	FOREIGN KEY (id_producto) REFERENCES Producto(id_producto)
+    id_producto INTEGER PRIMARY KEY,
+    peso NUMERIC(8,2) CHECK (peso>0),
+    material VARCHAR(90),
+    categoria INTEGER NOT NULL,
+    FOREIGN KEY (categoria) REFERENCES Categoria(id_categoria),
+    FOREIGN KEY (id_producto) REFERENCES Producto(id_producto)
 );
 
 CREATE TABLE Perfume (
-	id_producto INTEGER PRIMARY KEY,
-	fragancia VARCHAR(60),
-	marca VARCHAR(50),
-	mililitros INTEGER,
-	FOREIGN KEY (id_producto) REFERENCES Producto(id_producto)
+    id_producto INTEGER PRIMARY KEY,
+    fragancia VARCHAR(60),
+    marca VARCHAR(50),
+    mililitros INTEGER CHECK (mililitros>0),
+    FOREIGN KEY (id_producto) REFERENCES Producto(id_producto)
 );
 
 CREATE TABLE Joyero (
-	id_producto INTEGER PRIMARY KEY,
-	ancho NUMERIC(4,1),
-	alto NUMERIC(4,1),  
-	largo NUMERIC(4,1),
-	FOREIGN KEY (id_producto) REFERENCES Producto(id_producto)
+    id_producto INTEGER PRIMARY KEY,
+    ancho NUMERIC(4,1) CHECK (ancho>0),
+    alto NUMERIC(4,1) CHECK (alto>0),  
+    largo NUMERIC(4,1) CHECK (largo>0),
+    FOREIGN KEY (id_producto) REFERENCES Producto(id_producto)
 );
 
 CREATE TABLE JoyeroAlmacenaCategoria (
-	id_categoria INTEGER,
-	id_joyero INTEGER,
-	cantidad INTEGER,
-	PRIMARY KEY (id_categoria,id_joyero)
+    id_categoria INTEGER,
+    id_joyero INTEGER,
+    cantidad INTEGER CHECK (cantidad>0),
+    PRIMARY KEY (id_categoria,id_joyero)
 );
 
 CREATE TABLE Proveedor (
-	rut INTEGER PRIMARY KEY,
-	correo VARCHAR(320),
-	nombre VARCHAR(60)
+    rut INTEGER PRIMARY KEY,
+    correo VARCHAR(320),
+    nombre VARCHAR(60)
 );
 
 CREATE TABLE Sucursal (
-	id_sucursal SERIAL PRIMARY KEY,
-	calle VARCHAR(50),
-	numero_casa INTEGER,
-	comuna VARCHAR(40)
+    id_sucursal SERIAL PRIMARY KEY,
+    calle VARCHAR(50),
+    numero_casa INTEGER,
+    comuna VARCHAR(40)
 );
 
 CREATE TABLE Compra (
-	id_compra SERIAL PRIMARY KEY,
-	fecha DATE,
-	id_proveedor INTEGER,
-	id_sucursal INTEGER,
-	FOREIGN KEY (id_proveedor) REFERENCES Proveedor(rut) ON UPDATE CASCADE,
-	FOREIGN KEY (id_sucursal) REFERENCES Sucursal(id_sucursal) ON UPDATE CASCADE
+    id_compra SERIAL PRIMARY KEY,
+    fecha DATE,
+    id_proveedor INTEGER,
+    id_sucursal INTEGER,
+    FOREIGN KEY (id_proveedor) REFERENCES Proveedor(rut) ON UPDATE CASCADE,
+    FOREIGN KEY (id_sucursal) REFERENCES Sucursal(id_sucursal) ON UPDATE CASCADE
 );
 
 CREATE TABLE ProductoEnCompra (
-	id_compra INTEGER,
-	id_producto INTEGER,
-	cantidad INTEGER,
-	precio_total INTEGER,
-	PRIMARY KEY (id_compra,id_producto)
+    id_compra INTEGER,
+    id_producto INTEGER,
+    cantidad INTEGER CHECK (cantidad>0),
+    precio_total INTEGER,
+    PRIMARY KEY (id_compra,id_producto),
+    FOREIGN KEY (id_compra) REFERENCES Compra(id_compra) ON UPDATE CASCADE,
+    FOREIGN KEY (id_producto) REFERENCES Producto(id_producto) ON UPDATE CASCADE
 );
 
 
 
 CREATE TABLE ProductoEnSucursal(
-	id_producto INTEGER,
-	id_sucursal INTEGER,
-	stock INTEGER,
-	PRIMARY KEY (id_producto,id_sucursal),
-	FOREIGN KEY (id_producto) REFERENCES Producto(id_producto),
-	FOREIGN KEY (id_sucursal) REFERENCES Sucursal(id_sucursal)
+    id_producto INTEGER,
+    id_sucursal INTEGER,
+    stock INTEGER CHECK (stock >=0),
+    PRIMARY KEY (id_producto,id_sucursal),
+    FOREIGN KEY (id_producto) REFERENCES Producto(id_producto),
+    FOREIGN KEY (id_sucursal) REFERENCES Sucursal(id_sucursal)
 );
 
 CREATE TABLE Cliente (
-	rut INTEGER PRIMARY KEY,
-	telefono INTEGER,
-	calle VARCHAR(50),
-	numero_casa INTEGER,
-	comuna VARCHAR(40),
-	correo VARCHAR(320),
-	nombre VARCHAR(60)
+    rut INTEGER PRIMARY KEY,
+    telefono INTEGER,
+    calle VARCHAR(50),
+    numero_casa INTEGER,
+    comuna VARCHAR(40),
+    correo VARCHAR(320),
+    nombre VARCHAR(60)
 );
 
 CREATE TABLE Venta (
-	id_venta SERIAL PRIMARY KEY,
-	fecha DATE,
-	estado VARCHAR(15) DEFAULT 'Pendiente',
-	id_cliente INTEGER NOT NULL,
-	id_sucursal INTEGER NOT NULL,
-	FOREIGN KEY (id_cliente) REFERENCES Cliente(rut) ON UPDATE CASCADE,
-	FOREIGN KEY (id_sucursal) REFERENCES Sucursal(id_sucursal) ON UPDATE CASCADE
+    id_venta SERIAL PRIMARY KEY,
+    fecha DATE,
+    estado VARCHAR(15) DEFAULT 'Pendiente',
+    id_cliente INTEGER NOT NULL,
+    id_sucursal INTEGER NOT NULL,
+    FOREIGN KEY (id_cliente) REFERENCES Cliente(rut) ON UPDATE CASCADE,
+    FOREIGN KEY (id_sucursal) REFERENCES Sucursal(id_sucursal) ON UPDATE CASCADE
 );
 
 CREATE TABLE PagoDeVenta (
-	id_pago SERIAL PRIMARY KEY,
-	id_venta INTEGER,
-	monto INTEGER,
-	fecha DATE,
-	FOREIGN KEY (id_venta) REFERENCES Venta(id_venta)
+    id_pago SERIAL PRIMARY KEY,
+    id_venta INTEGER,
+    monto INTEGER CHECK (monto >0),
+    fecha DATE,
+    FOREIGN KEY (id_venta) REFERENCES Venta(id_venta)
 );
 
 CREATE TABLE ProductoEnVenta (
-	id_producto INTEGER,
-	id_venta INTEGER,
-	cantidad INTEGER,
-	precio_en_venta INTEGER,
-	PRIMARY KEY (id_producto,id_venta),
-	FOREIGN KEY (id_producto) REFERENCES Producto(id_producto),
-	FOREIGN KEY (id_venta) REFERENCES Venta(id_venta)
+    id_producto INTEGER,
+    id_venta INTEGER,
+    cantidad INTEGER CHECK (cantidad>0),
+    precio_en_venta INTEGER,
+    PRIMARY KEY (id_producto,id_venta),
+    FOREIGN KEY (id_producto) REFERENCES Producto(id_producto),
+    FOREIGN KEY (id_venta) REFERENCES Venta(id_venta)
 );
 
 
@@ -163,7 +165,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER VerificarStockEnVenta
 BEFORE INSERT ON ProductoEnVenta
 FOR EACH ROW
-EXECUTE FUNCTION verificar_stock_fn();
+EXECUTE PROCEDURE verificar_stock_fn();
 
 CREATE OR REPLACE FUNCTION actualizar_stock() RETURNS trigger AS $$
 DECLARE
@@ -190,35 +192,35 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER ActualizarStockDespuesDeVenta
 AFTER INSERT ON ProductoEnVenta
 FOR EACH ROW
-EXECUTE FUNCTION actualizar_stock();
+EXECUTE PROCEDURE actualizar_stock();
 
 CREATE OR REPLACE FUNCTION actualizar_stock_sucursal_despues_compra()
 RETURNS TRIGGER AS $$
 DECLARE
-    id_sucursal INTEGER;
+    sucursal_id INTEGER;
 BEGIN
     -- Obtener la sucursal asociada a la compra
-    SELECT id_sucursal INTO id_sucursal
+    SELECT Compra.id_sucursal INTO sucursal_id
     FROM Compra
     WHERE id_compra = NEW.id_compra;
 
-    IF id_sucursal IS NULL THEN
+    IF sucursal_id IS NULL THEN
         RAISE EXCEPTION 'No se encontró la sucursal de la compra con ID %', NEW.id_compra;
     END IF;
 
     -- Verificar si el producto ya existe en la sucursal
     IF EXISTS (
-        SELECT 1 FROM ProductoEnSucursal
-        WHERE id_producto = NEW.id_producto AND id_sucursal = id_sucursal
+        SELECT 1 FROM ProductoEnSucursal AS p
+        WHERE p.id_producto = NEW.id_producto AND p.id_sucursal = sucursal_id
     ) THEN
         -- Si existe, actualizar el stock
-        UPDATE ProductoEnSucursal
+        UPDATE ProductoEnSucursal AS p
         SET stock = stock + NEW.cantidad
-        WHERE id_producto = NEW.id_producto AND id_sucursal = id_sucursal;
+        WHERE p.id_producto = NEW.id_producto AND p.id_sucursal = sucursal_id;
     ELSE
         -- Si no existe, insertar nuevo registro
         INSERT INTO ProductoEnSucursal (id_producto, id_sucursal, stock)
-        VALUES (NEW.id_producto, id_sucursal, NEW.cantidad);
+        VALUES (NEW.id_producto, sucursal_id, NEW.cantidad);
     END IF;
 
     RETURN NEW;
@@ -228,7 +230,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER agregar_o_actualizar_stock
 AFTER INSERT ON ProductoEnCompra
 FOR EACH ROW
-EXECUTE FUNCTION actualizar_stock_sucursal_despues_compra();
+EXECUTE PROCEDURE actualizar_stock_sucursal_despues_compra();
 
 CREATE OR REPLACE FUNCTION validar_y_actualizar_estado_venta()
 RETURNS TRIGGER AS $$
@@ -268,7 +270,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER verificar_y_actualizar_pago
+CREATE TRIGGER verificar_y_actualizar_pago
 BEFORE INSERT ON PagoDeVenta
 FOR EACH ROW
-EXECUTE FUNCTION validar_y_actualizar_estado_venta();
+EXECUTE PROCEDURE validar_y_actualizar_estado_venta();

@@ -13,7 +13,7 @@ BEGIN
 		RETURN v_stock;
 	END IF;
 
-	SELECT stock INTO v_stock
+	SELECT COALESCE(SUM(stock),0) INTO v_stock
 	FROM ProductoEnSucursal
 	WHERE producto_id = id_producto AND sucursal_id = id_sucursal;
 
@@ -23,19 +23,17 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION ganancias_por_sucursal(
-    mes_numero TEXT,
+    mes_numero INTEGER,
     p_anio INTEGER
 )
 RETURNS TABLE (
     id_sucursal INTEGER,
-    total_ventas INTEGER,
-    total_compras INTEGER,
-    ingresos INTEGER,
-    gastos INTEGER,
-    ganancia INTEGER
+    total_ventas BIGINT,
+    total_compras BIGINT,
+    ingresos BIGINT,
+    gastos BIGINT,
+    ganancia BIGINT
 ) AS $$
-DECLARE
-    mes_numero INTEGER;
 BEGIN
     RETURN QUERY
     SELECT 
@@ -102,18 +100,16 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION ganancias_por_mes(mes_numero INTEGER, p_anio INTEGER)
 RETURNS TABLE (
-    mes INTEGER,
-    ingresos INTEGER,
-    gastos INTEGER,
-    ganancia INTEGER
+    mes TEXT,
+    ingresos BIGINT,
+    gastos BIGINT,
+    ganancia BIGINT
 ) AS $$
-DECLARE
-    mes_numero INTEGER;
 BEGIN
    -- Realizar las consultas
     RETURN QUERY
     SELECT 
-        INITCAP(mes_numero) || ' ' || p_anio AS mes,
+        mes_numero || ' / ' || p_anio AS mes,
         
         COALESCE((
             SELECT SUM(monto)
@@ -180,9 +176,9 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION estado_de_ventas_por_cliente(p_rut_cliente INTEGER)
 RETURNS TABLE (
     id_venta INTEGER,
-    precio_total INTEGER,
-    total_pagado INTEGER,
-    deuda INTEGER
+    precio_total BIGINT,
+    total_pagado BIGINT,
+    deuda BIGINT
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -225,9 +221,9 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION estado_general_del_cliente(p_rut_cliente INTEGER)
 RETURNS TABLE (
     rut_cliente INTEGER,
-    total_pagado INTEGER,
-    total_deuda INTEGER,
-    total_ventas INTEGER
+    total_pagado NUMERIC,
+    total_deuda NUMERIC,
+    total_ventas NUMERIC
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -254,6 +250,6 @@ BEGIN
     RETURN QUERY
     SELECT *
     FROM Cliente
-    WHERE nombre ILIKE '%' || p_nombre || '%';
+    WHERE Cliente.nombre ILIKE '%' || p_nombre || '%';
 END;
 $$ LANGUAGE plpgsql;

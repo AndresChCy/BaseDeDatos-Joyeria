@@ -24,8 +24,8 @@ INSERT INTO Categoria (nombre, descripcion) VALUES
 
 -- Proveedores
 INSERT INTO Proveedor (rut, correo, nombre) VALUES
-  (1001, 'prov1@joyas.cl',    'Brillantes S.A.'),
-  (1002, 'fragancias@perfume.cl', 'AromaPlus Ltda.');
+  (50094121, 'prov1@joyas.cl',    'Brillantes S.A.'),
+  (50401221, 'fragancias@perfume.cl', 'AromaPlus Ltda.');
 
 -- Sucursales
 INSERT INTO Sucursal (calle, numero_casa, comuna) VALUES
@@ -36,8 +36,8 @@ INSERT INTO Sucursal (calle, numero_casa, comuna) VALUES
 INSERT INTO Cliente
   (rut, telefono, calle, numero_casa, comuna, correo, nombre)
 VALUES
-  (2001, 912345678, 'Main St',  111, 'Concepción',   'juan.perez@mail.cl', 'Juan Pérez'),
-  (2002, 923456789, '2nd Ave',  222, 'Chiguayante',  'ana.soto@mail.cl',  'Ana Soto');
+  (14980301, 912345678, 'Main St',  111, 'Concepción',   'juan.perez@mail.cl', 'Juan Pérez'),
+  (16831227, 923456789, '2nd Ave',  222, 'Chiguayante',  'ana.soto@mail.cl',  'Ana Soto');
 
   -- Productos generales
 INSERT INTO Producto
@@ -68,8 +68,8 @@ INSERT INTO JoyeroAlmacenaCategoria (id_categoria, id_joyero, cantidad) VALUES
 
 -- Compras
 INSERT INTO Compra (fecha, id_proveedor, id_sucursal) VALUES
-  (CURRENT_DATE, 1001, 1),
-  (CURRENT_DATE, 1002, 2);
+  (CURRENT_DATE, 50094121, 1),
+  (CURRENT_DATE, 50401221, 2);
 
 -- Detalle de compra (genera stock en ProductoEnSucursal)
 INSERT INTO ProductoEnCompra
@@ -86,14 +86,16 @@ VALUES
   -- 6.1 Venta (estado por defecto “Pendiente”)
 INSERT INTO Venta (fecha, estado, id_cliente, id_sucursal)
 VALUES
-  (CURRENT_DATE, DEFAULT, 2001, 1);
+  (CURRENT_DATE, DEFAULT, 14980301, 1),
+  (CURRENT_DATE, DEFAULT, 16831227, 1);
 
 -- 6.2 Detalle de la venta (verifica y descuenta stock)
 INSERT INTO ProductoEnVenta
   (id_producto, id_venta, cantidad, precio_en_venta)
 VALUES
   (1, 1, 2, 50000),
-  (3, 1, 1, 15000);
+  (3, 1, 1, 15000),
+  (1, 2, 1, 50000);
 
 -- 6.3 Pago de la venta (actualiza estado a “Parcial” o “Pagada”)
 INSERT INTO PagoDeVenta (id_venta, monto, fecha)
