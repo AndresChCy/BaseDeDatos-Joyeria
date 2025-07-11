@@ -354,6 +354,35 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 ```
+##  `actualizar_stock()`
+### 📝 Descripción
+Función de trigger que se ejecuta después de una venta. Su propósito es descontar la cantidad de productos vendidos del inventario de la sucursal correspondiente. Primero, identifica la sucursal de la venta y luego actualiza la tabla `ProductoEnSucursal` restando el stock.
+### 📄 Definición SQL
+
+```sql
+CREATE OR REPLACE FUNCTION actualizar_stock() RETURNS trigger AS $$
+DECLARE
+    stock_actual INTEGER;
+    sucursal_venta INTEGER;
+BEGIN
+    -- Obtener sucursal de la venta
+    SELECT id_sucursal INTO sucursal_venta
+    FROM Venta
+    WHERE id_venta = NEW.id_venta;
+
+    IF sucursal_venta IS NULL THEN
+        RAISE EXCEPTION 'No se encontró la venta con id %', NEW.id_venta;
+    END IF;
+
+    UPDATE ProductoEnSucursal
+    SET stock = stock - NEW.cantidad
+    WHERE id_producto = NEW.id_producto AND id_sucursal = sucursal_venta;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
 ##  `actualizar_stock_sucursal_despues_compra()`
 
 ### 📝 Descripción
