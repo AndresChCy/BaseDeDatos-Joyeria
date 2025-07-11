@@ -5,6 +5,9 @@ Este repositorio contiene la definición y documentación de la base de datos ut
 ---
 # 📁Tablas:
 ##  `Producto`
+### 📝 Descripción
+Representa una **generalización** del **tipo de entidad** `Producto`. Funciona como una superclase que agrupa los atributos comunes compartidos por sus especializaciones: `Joya`, `Perfume` y `Joyero`.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -19,6 +22,9 @@ CREATE TABLE Producto (
 ```
 ##  `Categoria`
 
+### 📝 Descripción
+Representa el **tipo de entidad** `Categoria`. Permite clasificar las joyas, estableciendo una interrelación con el tipo de entidad `Joya`.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -29,6 +35,9 @@ CREATE TABLE Categoria (
 );
 ```
 ##  `Joya`
+
+### 📝 Descripción
+Representa una **especialización** del **tipo de entidad** `Producto`. Hereda los atributos comunes de `Producto` y añade propiedades específicas de las joyas, como peso y material.
 
 ### 📄 Definición SQL
 
@@ -44,6 +53,9 @@ CREATE TABLE Joya (
 ```
 ##  `Perfume`
 
+### 📝 Descripción
+Representa una **especialización** del **tipo de entidad** `Producto`. Hereda atributos de la superclase `Producto` y define características propias de los perfumes.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -56,6 +68,9 @@ CREATE TABLE Perfume (
 );
 ```
 ##  `Joyero`
+
+### 📝 Descripción
+Representa una **especialización** del **tipo de entidad** `Producto`. Al igual que `Joya` y `Perfume`, hereda de `Producto` y añade atributos dimensionales específicos de los joyeros.
 
 ### 📄 Definición SQL
 
@@ -70,6 +85,9 @@ CREATE TABLE Joyero (
 ```
 ##  `JoyeroAlmacenaCategoria`
 
+### 📝 Descripción
+Modela una **interrelación de tipo muchos a muchos (N:M)** entre los tipos de entidad `Joyero` y `Categoria`. Especifica qué categorías de joyas puede almacenar un joyero y en qué cantidad.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -82,6 +100,9 @@ CREATE TABLE JoyeroAlmacenaCategoria (
 ```
 ##  `Proveedor`
 
+### 📝 Descripción
+Representa el **tipo de entidad** `Proveedor`, que contiene la información de quienes suministran productos a la joyería.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -92,6 +113,9 @@ CREATE TABLE Proveedor (
 );
 ```
 ##  `Sucursal`
+
+### 📝 Descripción
+Representa el **tipo de entidad** `Sucursal`, almacenando los datos de las distintas ubicaciones físicas de la joyería.
 
 ### 📄 Definición SQL
 
@@ -104,6 +128,9 @@ CREATE TABLE Sucursal (
 );
 ```
 ##  `Compra`
+
+### 📝 Descripción
+Representa el **tipo de entidad** `Compra`, que modela la interrelación entre `Proveedor` y `Sucursal`, registrando las adquisiciones de productos.
 
 ### 📄 Definición SQL
 
@@ -119,6 +146,9 @@ CREATE TABLE Compra (
 ```
 ##  `ProductoEnCompra`
 
+### 📝 Descripción
+Modela una **interrelación de tipo muchos a muchos (N:M)** entre los tipos de entidad `Compra` y `Producto`. Actúa como una entidad asociativa que detalla los productos incluidos en cada compra.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -131,6 +161,9 @@ CREATE TABLE ProductoEnCompra (
 );
 ```
 ##  `ProductoEnSucursal`
+
+### 📝 Descripción
+Modela una **interrelación de tipo muchos a muchos (N:M)** entre `Producto` y `Sucursal`. Su función es gestionar el inventario, registrando el stock de cada producto por sucursal.
 
 ### 📄 Definición SQL
 
@@ -145,6 +178,9 @@ CREATE TABLE ProductoEnSucursal(
 );
 ```
 ##  `Cliente`
+
+### 📝 Descripción
+Representa el **tipo de entidad** `Cliente`, almacenando todos los datos relevantes de las personas que compran en la joyería.
 
 ### 📄 Definición SQL
 
@@ -161,6 +197,9 @@ CREATE TABLE Cliente (
 ```
 ##  `Venta`
 
+### 📝 Descripción
+Representa el **tipo de entidad** `Venta`, que establece una interrelación entre `Cliente` y `Sucursal` para registrar las transacciones de venta.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -176,6 +215,9 @@ CREATE TABLE Venta (
 ```
 ##  `PagoDeVenta`
 
+### 📝 Descripción
+Representa un **tipo de entidad débil**, ya que su existencia depende de una `Venta`. Modela la interrelación uno a muchos (1:N) entre una venta y sus pagos.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -189,6 +231,9 @@ CREATE TABLE PagoDeVenta (
 ```
 
 ##  `ProductoEnVenta`
+
+### 📝 Descripción
+Modela una **interrelación de tipo muchos a muchos (N:M)** entre `Producto` y `Venta`. Esta entidad asociativa detalla los productos específicos que forman parte de cada venta.
 
 ### 📄 Definición SQL
 
@@ -209,6 +254,9 @@ CREATE TABLE ProductoEnVenta (
 # 📎 Triggers
 ##  `verificar_y_actualizar_pago`
 
+### 📝 Descripción
+Se activa antes de registrar un nuevo pago (`PagoDeVenta`). Su función es llamar a `validar_y_actualizar_estado_venta()` para asegurar que el pago no exceda el total de la venta y para actualizar el estado de la misma.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -219,6 +267,9 @@ EXECUTE FUNCTION validar_y_actualizar_estado_venta();
 ```
 
 ##  `agregar_o_actualizar_stock`
+
+### 📝 Descripción
+Se dispara después de insertar un registro en `ProductoEnCompra`. Llama a la función `actualizar_stock_sucursal_despues_compra()` para añadir los nuevos productos al inventario de la sucursal correspondiente.
 
 ### 📄 Definición SQL
 
@@ -232,6 +283,9 @@ EXECUTE FUNCTION actualizar_stock_sucursal_despues_compra();
 
 ##  `ActualizarStockDespuesDeVenta`
 
+### 📝 Descripción
+Se activa después de que un producto es añadido a una venta (`ProductoEnVenta`). Ejecuta la función `actualizar_stock()` para descontar la cantidad vendida del inventario de la sucursal.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -242,6 +296,9 @@ EXECUTE FUNCTION actualizar_stock();
 ```
 
 ##  `VerificarStockEnVenta`
+
+### 📝 Descripción
+Se ejecuta antes de insertar un producto en una venta (`ProductoEnVenta`). Llama a la función `verificar_stock_fn()` para comprobar si hay suficiente stock del producto en la sucursal donde se realiza la venta.
 
 ### 📄 Definición SQL
 
@@ -255,6 +312,9 @@ EXECUTE FUNCTION verificar_stock_fn();
 
 # 📐 Funciones 
 ##  `verificar_stock_fn()`
+
+### 📝 Descripción
+Esta función de trigger comprueba si hay suficiente stock de un producto en una sucursal antes de que se registre en una venta. Si el stock es insuficiente, lanza una excepción para evitar la venta.
 
 ### 📄 Definición SQL
 
@@ -296,6 +356,9 @@ $$ LANGUAGE plpgsql;
 ```
 ##  `actualizar_stock_sucursal_despues_compra()`
 
+### 📝 Descripción
+Función de trigger que actualiza el stock de un producto en una sucursal después de una compra. Si el producto ya existe en el inventario de la sucursal, incrementa el stock. Si no, inserta un nuevo registro.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -333,6 +396,9 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 ##  `validar_y_actualizar_estado_venta()`
+
+### 📝 Descripción
+Esta función de trigger se encarga de validar los pagos de una venta. Calcula si el monto acumulado de los pagos excede el total de la venta y actualiza el estado de la venta a 'Pagada', 'Parcial' o 'Pendiente' según corresponda.
 
 ### 📄 Definición SQL
 
@@ -378,6 +444,9 @@ $$ LANGUAGE plpgsql;
 
 ##  `get_stock (producto_id, sucursal_id)`
 
+### 📝 Descripción
+Devuelve el stock de un producto. Si se especifica una sucursal, retorna el stock de esa sucursal. Si no, devuelve el stock total del producto sumando todas las sucursales.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -403,6 +472,9 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 ##  `ganancias_por_sucursal(mes, año)`
+
+### 📝 Descripción
+Calcula las ganancias de cada sucursal para un mes y año determinados. Devuelve una tabla con el total de ventas, compras, ingresos, gastos y la ganancia neta por sucursal.
 
 ### 📄 Definición SQL
 
@@ -487,6 +559,9 @@ $$ LANGUAGE plpgsql;
 ```
 ##  `ganancias_por_mes(mes, año)`
 
+### 📝 Descripción
+Calcula las ganancias totales de la empresa para un mes y año específicos. Devuelve el total de ingresos, gastos y la ganancia neta.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -542,6 +617,9 @@ $$ LANGUAGE plpgsql;
 
 ##  `pagos_del_cliente(rut)`
 
+### 📝 Descripción
+Devuelve un historial de todos los pagos realizados por un cliente específico, ordenados por fecha.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -570,6 +648,9 @@ $$ LANGUAGE plpgsql;
 ```
 
 ##  `estado_de_ventas_por_cliente(rut)`
+
+### 📝 Descripción
+Proporciona un resumen del estado de todas las ventas de un cliente. Para cada venta, muestra el precio total, el monto pagado y la deuda pendiente.
 
 ### 📄 Definición SQL
 
@@ -622,6 +703,9 @@ $$ LANGUAGE plpgsql;
 
 ##  `estado_general_del_cliente(rut)`
 
+### 📝 Descripción
+Ofrece una vista consolidada de la situación financiera de un cliente, mostrando el total que ha pagado, su deuda total acumulada y el valor total de todas sus compras.
+
 ### 📄 Definición SQL
 
 ```sql
@@ -645,6 +729,9 @@ $$ LANGUAGE plpgsql;
 ```
 
 ##  `buscar_cliente_por_nombre(nombre)`
+
+### 📝 Descripción
+Permite buscar clientes en la base de datos utilizando una parte de su nombre (búsqueda insensible a mayúsculas y minúsculas).
 
 ### 📄 Definición SQL
 
@@ -670,6 +757,9 @@ $$ LANGUAGE plpgsql;
 ---
 # 👁️ Vistas
 ##  Clientes que aún no completan pago.
+
+### 📝 Descripción
+Esta vista muestra una lista de todos los clientes que tienen ventas con estado 'Pendiente' o 'Parcial', lo que facilita el seguimiento de los pagos incompletos.
 
 ### 📄 Definición SQL
 
